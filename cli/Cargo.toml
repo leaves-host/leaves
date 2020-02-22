@@ -1,0 +1,15 @@
+[package]
+authors = ["Vivian Hellyer <hi@vivian.is>"]
+edition = "2018"
+name = "leaves"
+version = "0.1.0"
+
+[dependencies]
+anyhow = { default-features = false, version = "^1.0.26" }
+copypasta = { default-features = false, version = "^0.6.2" }
+directories = { default-features = false, version = "^2.0.2" }
+pretty-bytes = { default-features = false, version = "^0.2.2" }
+reqwest = { default-features = false, features = ["blocking", "json", "rustls-tls"], version = "^0.10.1" }
+serde = { default-features = false, features = ["derive"], version = "^1.0.0" }
+serde_json = { default-features = false, version = "^1.0.0" }
+vivian-essentials = "0.1"
