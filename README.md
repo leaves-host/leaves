@@ -59,10 +59,12 @@ Authorization: Basic hi@vivian.is/token:foo bar baz
 
 ## Run it
 
-Assuming you already have a postgres container running, create a volume for the
-uploaded files and bind to port 10000 on the host:
+`leaves` maintains a SQLite database and automatically runs migrations. All you
+need to do is specify where you want your data to be kept, like maybe in a
+volume:
 
 ```shell script
+$ docker volume create leaves_data
 $ docker run -itd --env-file leaves.env -v leaves_data:/data -p 10000:80 vivianis/leaves
 ```
 
