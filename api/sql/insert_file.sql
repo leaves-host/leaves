@@ -3,9 +3,7 @@ insert into files (
   size,
   user_id
 ) values (
-  $1,
-  $2,
-  $3
+  ?1,
+  ?2,
+  ?3
 )
-returning
-  id

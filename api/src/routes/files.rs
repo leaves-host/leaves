@@ -1,14 +1,26 @@
 use crate::prelude::*;
 use async_std::fs;
 use log::warn;
+use rusqlite::params;
+use serde::Deserialize;
 use serde_json::json;
+
+#[derive(Deserialize)]
+struct TrimmedFileInfo {
+    pub id: String,
+    pub size: u64,
+}
 
 pub async fn get(req: Request) -> Response {
     let id = req.param::<String>("id").expect("infallible");
-    let query = sqlx::query!("select id, size from files where id = $1", id);
-    let mut pool = &req.state().db;
+    let conn = req.state().db.get().unwrap();
+    let query = conn.query_row_and_then(
+        "select id, size from files where id = ?1",
+        &[id],
+        serde_rusqlite::from_row::<TrimmedFileInfo>,
+    );
 
-    match query.fetch_one(&mut pool).await {
+    match query {
         Ok(file) => utils::response(
             200,
             &json!({
@@ -40,12 +52,15 @@ pub async fn post(mut req: Request) -> Response {
     let user = req.local::<User>().expect("user must be present");
 
     let id = utils::random_string(6);
-    let body_size = body.len() as i32;
+    let body_size = body.len() as i64;
 
-    let query = { sqlx::query_file!("sql/insert_file.sql", id, body_size, user.id) };
-    let mut pool = &req.state().db;
+    let conn = req.state().db.get().unwrap();
+    let query = conn.execute(
+        include_str!("../../sql/insert_file.sql"),
+        params![id, body_size, user.id],
+    );
 
-    if let Err(why) = query.fetch_all(&mut pool).await {
+    if let Err(why) = query {
         warn!("Failed to create file record: {:?}", why);
 
         return utils::response(

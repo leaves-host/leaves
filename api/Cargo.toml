@@ -11,16 +11,21 @@ version = "0.1.0"
 
 [dependencies]
 async-std = { default-features = false, version = "^1.5.0" }
+barrel = { default-features = false, features = ["sqlite3"], version = "^0.6.5" }
 envy = { default-features = false, version = "^0.4.1" }
 femme = { default-features = false, version = "^1.3.0" }
 futures = { default-features = false, version = "^0.3.4" }
 log = { default-features = false, version = "^0.4.8" }
 models = { package = "leaves-models", path = "../models" }
-rand = { default-features = false, version = "^0.7.3" }
+r2d2 = { default-features = false, version = "^0.8.8" }
+r2d2_sqlite = { default-features = false, version = "^0.14.0" }
+rand = { default-features = true, version = "^0.7.3" }
+refinery = { default-features = false, features = ["rusqlite"], version = "^0.2.1" }
+rusqlite = { default-features = false, version = "^0.21.0" }
 serde = { default-features = false, features = ["derive"], version = "^1.0.0" }
 serde_json = { default-features = false, version = "^1.0.0" }
+serde_rusqlite = { default-features = false, version = "^0.23.0" }
 snafu = { default-features = false, features = ["std"], version = "^0.6.0" }
-sqlx = { default-features = false, features = ["macros", "postgres", "runtime-async-std"], version = "^0.2.5" }
 # This commit adds per-route middleware, which just makes everything so much
 # easier.
 tide = { default-features = false, features = ["hyper-server"], git = "https://github.com/http-rs/tide", rev = "589abaf" }

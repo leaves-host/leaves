@@ -14,8 +14,8 @@ mod defaults {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    #[serde(rename = "database_url")]
-    pub db_url: String,
+    #[serde(rename = "database_path")]
+    pub db_path: String,
     #[serde(default = "defaults::open_registration")]
     pub open_registration: bool,
     pub public_url: String,

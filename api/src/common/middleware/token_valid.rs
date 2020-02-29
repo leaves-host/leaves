@@ -1,6 +1,7 @@
 use super::super::auth::Auth;
 use crate::prelude::*;
 use futures::future::{BoxFuture, FutureExt};
+use models::v1::User as UserModel;
 use serde_json::json;
 use std::convert::TryFrom;
 use tide::{Middleware, Next};
@@ -28,17 +29,19 @@ impl Middleware<State> for TokenValid {
                 }
             };
 
-            let query = sqlx::query!(
+            let conn = req.state().db.get().unwrap();
+            let query = conn.query_row_and_then(
                 "select users.email, users.id from users join api_tokens on \
-                api_tokens.user_id = users.id where users.email = $1 and \
-                api_tokens.contents = $2 limit 1",
-                auth.email.to_owned(),
-                auth.api_token.to_owned()
+                api_tokens.user_id = users.id where users.email = ?1 and \
+                api_tokens.contents = ?2 limit 1",
+                &[auth.email, auth.api_token],
+                serde_rusqlite::from_row::<UserModel>,
             );
-            let mut pool = &req.state().db;
-            let user_row = match query.fetch_one(&mut pool).await {
+            let user_row = match query {
                 Ok(user) => user,
-                Err(_) => {
+                Err(why) => {
+                    log::warn!("Error: {:?}", why);
+
                     return utils::response(
                         401,
                         &json!({

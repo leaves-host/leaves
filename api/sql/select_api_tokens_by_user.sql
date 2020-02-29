@@ -5,4 +5,4 @@ select
 from
   api_tokens
 where
-  user_id = $1
+  user_id = ?1

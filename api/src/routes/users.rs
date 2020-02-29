@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use log::warn;
-use models::v1::{ApiToken, Signup, User};
+use models::v1::{ApiToken, Signup, User as UserModel};
+use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -15,17 +16,15 @@ pub async fn get(req: Request) -> Response {
         Err(_) => return Response::new(400),
     };
 
-    let query = { sqlx::query_file_as!(User, "sql/select_user_by_id.sql", user_id as i64) };
-    let mut pool = &req.state().db;
+    let conn = req.state().db.get().unwrap();
+    let query = conn.query_row_and_then(
+        include_str!("../../sql/select_user_by_id.sql"),
+        &[user_id as i64],
+        serde_rusqlite::from_row::<UserModel>,
+    );
 
-    match query.fetch_optional(&mut pool).await {
-        Ok(Some(user)) => utils::response(200, &user),
-        Ok(None) => utils::response(
-            404,
-            &json!({
-                "message": "That user doesn't exist",
-            }),
-        ),
+    match query {
+        Ok(user) => utils::response(200, &user),
         Err(why) => {
             warn!("Failed to get user {}: {:?}", user_id, why);
 
@@ -42,22 +41,35 @@ pub async fn get(req: Request) -> Response {
 pub async fn get_api_tokens(req: Request) -> Response {
     let user = req.local::<User>().expect("user must be present");
 
-    let query = { sqlx::query_file_as!(ApiToken, "sql/select_api_tokens_by_user.sql", user.id) };
-    let mut pool = &req.state().db;
+    let conn = req.state().db.get().unwrap();
+    let mut statement = match conn.prepare(include_str!("../../sql/select_api_tokens_by_user.sql")) {
+        Ok(statement) => statement,
+        Err(why) => {
+            warn!("Failed to prepare statement: {:?}", why);
 
-    match query.fetch_all(&mut pool).await {
-        Ok(tokens) => utils::response(200, &tokens),
+            return utils::response(500, &json!({
+                "message": "Failed to perform database statement",
+            }));
+        },
+    };
+
+    let rows = match statement.query_and_then(params![user.id], serde_rusqlite::from_row::<ApiToken>) {
+        Ok(rows) => rows,
         Err(why) => {
             warn!("Failed to get API tokens for user {}: {:?}", user.id, why);
 
-            utils::response(
+            return utils::response(
                 500,
                 &json!({
                     "message": "Error getting API tokens, please try again",
                 }),
-            )
-        }
-    }
+            );
+        },
+    };
+
+    let tokens = rows.filter_map(|r| r.ok()).collect::<Vec<ApiToken>>();
+
+    utils::response(200, &tokens)
 }
 
 pub async fn post(mut req: Request) -> Response {
@@ -74,14 +86,11 @@ pub async fn post(mut req: Request) -> Response {
     };
     let email = email.trim();
 
-    let mut pool = &req.state().db;
-    let query = sqlx::query!(
-        "insert into users (email) values ($1) returning id",
-        email.to_owned()
-    );
+    let conn = req.state().db.get().unwrap();
+    let query = conn.execute("insert into users (email) values (?1)", params![email]);
 
-    let user = match query.fetch_one(&mut pool).await {
-        Ok(user) => user,
+    let id = match query {
+        Ok(_) => conn.last_insert_rowid(),
         Err(why) => {
             warn!("Failed to create user {}: {:?}", email, why);
 
@@ -95,13 +104,13 @@ pub async fn post(mut req: Request) -> Response {
     };
 
     let token_content = utils::random_string(50);
-    let query = sqlx::query!(
-        "insert into api_tokens (contents, user_id) values ($1, $2)",
-        token_content,
-        user.id
+    let conn = req.state().db.get().unwrap();
+    let query = conn.execute(
+        "insert into api_tokens (contents, user_id) values (?1, ?2)",
+        params![token_content, id],
     );
-    let mut pool = &req.state().db;
-    if let Err(why) = query.execute(&mut pool).await {
+
+    if let Err(why) = query {
         warn!("Failed to create API token {}: {:?}", token_content, why);
 
         return utils::response(
@@ -116,7 +125,7 @@ pub async fn post(mut req: Request) -> Response {
         201,
         &Signup {
             email: email.to_owned(),
-            id: user.id as u64,
+            id: id as u64,
             token: token_content,
         },
     )
