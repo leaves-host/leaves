@@ -18,7 +18,7 @@ pub async fn get(req: Request) -> Response {
 
     let conn = req.state().db.get().unwrap();
     let query = conn.query_row_and_then(
-        include_str!("../../sql/select_user_by_id.sql"),
+        "select id, email from users where id = ?1",
         &[user_id as i64],
         serde_rusqlite::from_row::<UserModel>,
     );
@@ -42,7 +42,7 @@ pub async fn get_api_tokens(req: Request) -> Response {
     let user = req.local::<User>().expect("user must be present");
 
     let conn = req.state().db.get().unwrap();
-    let mut statement = match conn.prepare(include_str!("../../sql/select_api_tokens_by_user.sql")) {
+    let mut statement = match conn.prepare("select id, contents, user_id from api_tokens where user_id = ?1") {
         Ok(statement) => statement,
         Err(why) => {
             warn!("Failed to prepare statement: {:?}", why);

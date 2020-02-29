@@ -5,6 +5,7 @@ use crate::{
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use snafu::ResultExt;
+use std::path::PathBuf;
 
 pub struct State {
     pub config: Config,
@@ -14,7 +15,9 @@ pub struct State {
 impl State {
     pub async fn new() -> Result<Self> {
         let config = Config::new()?;
-        let manager = SqliteConnectionManager::file(&config.db_path);
+        let mut path = PathBuf::from(&config.data_path);
+        path.push("db");
+        let manager = SqliteConnectionManager::file(path);
         let db = Pool::builder().max_size(5).build(manager).context(R2d2Initialization)?;
 
         Ok(Self { config, db })

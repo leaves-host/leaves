@@ -4,6 +4,7 @@ use log::warn;
 use rusqlite::params;
 use serde::Deserialize;
 use serde_json::json;
+use std::path::PathBuf;
 
 #[derive(Deserialize)]
 struct TrimmedFileInfo {
@@ -56,7 +57,7 @@ pub async fn post(mut req: Request) -> Response {
 
     let conn = req.state().db.get().unwrap();
     let query = conn.execute(
-        include_str!("../../sql/insert_file.sql"),
+        "insert into files (id, size, user_id) values (?1, ?2, ?3)",
         params![id, body_size, user.id],
     );
 
@@ -71,10 +72,12 @@ pub async fn post(mut req: Request) -> Response {
         );
     }
 
-    let filepath = format!("./{}", id);
+    let mut filepath = PathBuf::from(&req.state().config.data_path);
+    filepath.push("files");
+    filepath.push(&id);
 
     if let Err(why) = fs::write(&filepath, body).await {
-        warn!("Failed to write file to {}: {:?}", filepath, why);
+        warn!("Failed to write file to {}: {:?}", filepath.display(), why);
 
         return Response::new(500);
     }
