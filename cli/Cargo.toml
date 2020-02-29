@@ -1,5 +1,5 @@
 [package]
-authors = ["Vivian Hellyer <hi@vivian.is>"]
+authors = ["Vivian Hellyer <vivian@hellyer.dev>"]
 edition = "2018"
 name = "leaves"
 version = "0.1.0"

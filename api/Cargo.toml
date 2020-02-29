@@ -1,5 +1,5 @@
 [package]
-authors = ["Vivian Hellyer <hi@vivian.is>"]
+authors = ["Vivian Hellyer <vivian@hellyer.dev>"]
 edition = "2018"
 homepage = "https://github.com/vivianhellyer/leaves"
 include = ["./src/**/*.rs", "Cargo.toml", "Cargo.lock", "LICENSE.md", "README.md"]
