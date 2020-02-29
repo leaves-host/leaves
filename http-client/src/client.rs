@@ -62,17 +62,17 @@ impl Client {
     }
 
     fn get<T: DeserializeOwned>(&self, path: &str, auth: bool) -> Result<T> {
-        self.send(path, auth, ().into())
+        self.send(Method::GET, path, auth, ().into())
     }
 
     fn post<T: DeserializeOwned>(&self, path: &str, auth: bool, body: Vec<u8>) -> Result<T> {
-        self.send(path, auth, body.into())
+        self.send(Method::POST, path, auth, body.into())
     }
 
-    fn send<T: DeserializeOwned>(&self, path: &str, auth: bool, body: Body) -> Result<T> {
+    fn send<T: DeserializeOwned>(&self, method: Method, path: &str, auth: bool, body: Body) -> Result<T> {
         let mut builder = Request::builder();
         builder.uri(format!("{}/{}", self.config.api_url, path));
-        builder.method(Method::POST);
+        builder.method(method);
 
         if auth {
             if let Some(auth) = self.config.auth() {
