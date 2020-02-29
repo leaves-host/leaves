@@ -11,22 +11,24 @@ struct PostBody {
 }
 
 pub async fn get(req: Request) -> Response {
-    let user_id = match req.param::<u64>("id") {
-        Ok(user_id) => user_id,
+    match req.param::<String>("id").as_ref().map(AsRef::as_ref) {
+        Ok("@me") => {},
+        Ok(_) => return Response::new(403),
         Err(_) => return Response::new(400),
     };
+    let user = req.local::<User>().expect("user must be present");
 
-    let conn = req.state().db.get().unwrap();
+    let conn = req.state().db.get().expect("couldn't get connection");
     let query = conn.query_row_and_then(
         "select id, email from users where id = ?1",
-        &[user_id as i64],
+        &[user.id as i64],
         serde_rusqlite::from_row::<UserModel>,
     );
 
     match query {
         Ok(user) => utils::response(200, &user),
         Err(why) => {
-            warn!("Failed to get user {}: {:?}", user_id, why);
+            warn!("Failed to get user {}: {:?}", user.id, why);
 
             utils::response(
                 500,
