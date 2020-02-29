@@ -11,11 +11,11 @@ a user account.
 
 If open registration is enabled, then you can create an account by POSTing:
 
-```
+```http
 POST /v1/users
 
 {
-  "email": "hi@vivian.is",
+  "email": "vivian@hellyer.dev",
 }
 ```
 
@@ -32,7 +32,7 @@ You can upload files by POSTing a body, with your API token and email:
 
 ```http request
 POST /v1/files
-Authorization: Basic hi@vivian.is/token:foo bar baz
+Authorization: Basic vivian@hellyer.dev/token:foo bar baz
 
 post file contents as the body
 ```
@@ -47,14 +47,14 @@ Delete your file by DELETEing it:
 
 ```http request
 DELETE /v1/files/61xc90l
-Authorization: Basic hi@vivian.is/token:foo bar baz
+Authorization: Basic vivian@hellyer.dev/token:foo bar baz
 ```
 
 List your 100 most recent files:
 
 ```http request
 GET /v1/users/@me/files?limit=100
-Authorization: Basic hi@vivian.is/token:foo bar baz
+Authorization: Basic vivian@hellyer.dev/token:foo bar baz
 ```
 
 ## Run it
