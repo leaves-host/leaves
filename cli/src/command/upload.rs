@@ -1,7 +1,7 @@
 use crate::config::Config;
 use copypasta::{ClipboardContext, ClipboardProvider};
+use models::v1::Upload;
 use reqwest::{blocking::Client, Error as ReqwestError};
-use serde::Deserialize;
 use snafu::{ResultExt, Snafu};
 use std::{
     fs,
@@ -15,13 +15,6 @@ pub enum UploadError {
     ReadingStdin { source: IoError },
     SendingRequest { source: ReqwestError },
     WritingToStdout { source: IoError },
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct Upload {
-    pub id: String,
-    pub size: u64,
-    pub url: String,
 }
 
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {

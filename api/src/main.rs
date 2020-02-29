@@ -5,7 +5,6 @@ mod app;
 mod common;
 mod config;
 mod error;
-mod model;
 mod prelude;
 mod routes;
 mod state;

@@ -1,8 +1,6 @@
-use crate::{
-    model::{ApiToken, User},
-    prelude::*,
-};
+use crate::prelude::*;
 use log::warn;
+use models::v1::{ApiToken, Signup, User};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -116,10 +114,10 @@ pub async fn post(mut req: Request) -> Response {
 
     utils::response(
         201,
-        &json!({
-            "email": email,
-            "id": user.id,
-            "token": token_content,
-        }),
+        &Signup {
+            email: email.to_owned(),
+            id: user.id as u64,
+            token: token_content,
+        },
     )
 }

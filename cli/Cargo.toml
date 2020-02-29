@@ -7,6 +7,7 @@ version = "0.1.0"
 [dependencies]
 copypasta = { default-features = false, version = "^0.6.2" }
 directories = { default-features = false, version = "^2.0.2" }
+models = { package = "leaves-models", path = "../models" }
 pretty-bytes = { default-features = false, version = "^0.2.2" }
 reqwest = { default-features = false, features = ["blocking", "json", "rustls-tls"], version = "^0.10.1" }
 serde = { default-features = false, features = ["derive"], version = "^1.0.0" }

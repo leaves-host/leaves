@@ -1,6 +1,6 @@
 use crate::config::{Config, ConfigError};
+use models::v1::Signup;
 use reqwest::{blocking::Client, Error as ReqwestError, StatusCode};
-use serde::Deserialize;
 use serde_json::json;
 use snafu::{ResultExt, Snafu};
 use std::io::{self, Error as IoError, Write};
@@ -12,13 +12,6 @@ pub enum SignupError {
     SavingConfig { source: ConfigError },
     SendingRequest { source: ReqwestError },
     WritingToStdout { source: IoError },
-}
-
-#[derive(Debug, Deserialize)]
-struct SignupBody {
-    pub token: String,
-    pub email: String,
-    pub id: u64,
 }
 
 pub fn run() -> Result<(), SignupError> {
@@ -52,7 +45,7 @@ pub fn run() -> Result<(), SignupError> {
 
     match resp.status() {
         StatusCode::CREATED => {
-            let body = resp.json::<SignupBody>().context(ParsingResponse)?;
+            let body = resp.json::<Signup>().context(ParsingResponse)?;
             Config::new(api_url, body.email, body.token)
                 .save()
                 .context(SavingConfig)?;

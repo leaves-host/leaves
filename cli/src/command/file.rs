@@ -1,6 +1,6 @@
+use models::v1::FileInfo;
 use pretty_bytes::converter as bytesize;
 use reqwest::{blocking::Client, Error as ReqwestError};
-use serde::Deserialize;
 use snafu::{ResultExt, Snafu};
 use std::io::{self, Error as IoError, Write};
 
@@ -9,12 +9,6 @@ pub enum FileError {
     ParsingResponse { source: ReqwestError },
     SendingRequest { source: ReqwestError },
     WritingToStdout { source: IoError },
-}
-
-#[derive(Clone, Debug, Deserialize)]
-struct GetFile {
-    id: String,
-    size: u32,
 }
 
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
@@ -36,7 +30,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
         .get(&format!("http://0.0.0.0:10000/files/{}", id))
         .send()
         .context(SendingRequest)?;
-    let file = res.json::<GetFile>().context(ParsingResponse)?;
+    let file = res.json::<FileInfo>().context(ParsingResponse)?;
 
     let human_bytes = bytesize::convert(file.size as f64);
     writeln!(
