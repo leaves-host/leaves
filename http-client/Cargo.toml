@@ -1,0 +1,14 @@
+[package]
+authors = ["Vivian Hellyer <vivian@hellyer.dev>"]
+edition = "2018"
+name = "leaves-http-client"
+version = "0.1.0"
+
+[dependencies]
+isahc = { default-features = false, version = "^0.8.2" }
+models = { package = "leaves-models", path = "../models" }
+serde = { default-features = false, features = ["derive"], version = "^1.0.0" }
+serde_json = { default-features = false, features = ["std"], version = "^1.0.0" }
+
+[dev-dependencies]
+static_assertions = "^1.1.0"

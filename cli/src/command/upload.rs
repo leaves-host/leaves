@@ -1,7 +1,6 @@
 use crate::config::Config;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use models::v1::Upload;
-use reqwest::{blocking::Client, Error as ReqwestError};
+use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
 use std::{
     fs,
@@ -10,10 +9,10 @@ use std::{
 
 #[derive(Debug, Snafu)]
 pub enum UploadError {
-    ParsingResponse { source: ReqwestError },
+    CreatingClient { source: LeavesClientError },
+    PerformingRequest { source: LeavesClientError },
     ReadingFile { source: IoError },
     ReadingStdin { source: IoError },
-    SendingRequest { source: ReqwestError },
     WritingToStdout { source: IoError },
 }
 
@@ -41,17 +40,13 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
         bytes
     };
 
-    let client = Client::new();
-    writeln!(io::stdout(), "sending").context(WritingToStdout)?;
-    let res = client
-        .post("http://0.0.0.0:10000/files")
-        .body(bytes)
-        .header("Authorization", config.auth())
-        .send()
-        .context(SendingRequest)?;
-    writeln!(io::stdout(), "sent").context(WritingToStdout)?;
-    let file = res.json::<Upload>().context(ParsingResponse)?;
-    writeln!(io::stdout(), "file").context(WritingToStdout)?;
+    let client = LeavesClient::new(LeavesConfig::new(
+        Some(config.token),
+        config.api_url,
+        Some(config.email),
+    ))
+    .context(CreatingClient)?;
+    let file = client.upload(bytes).context(PerformingRequest)?;
 
     writeln!(io::stdout(), "🍂 {}", file.url).context(WritingToStdout)?;
 

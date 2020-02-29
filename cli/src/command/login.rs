@@ -1,14 +1,15 @@
 use crate::config::{Config, ConfigError};
-use reqwest::{blocking::Client, Error as ReqwestError, StatusCode};
+use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
 use std::io::{self, Error as IoError, Write};
 
 #[derive(Debug, Snafu)]
 pub enum LoginError {
+    CreatingClient { source: LeavesClientError },
     FlushingStdout { source: IoError },
+    PerformingRequest { source: LeavesClientError },
     ReadingStdin { source: IoError },
     SavingConfig { source: ConfigError },
-    SendingRequest { source: ReqwestError },
     WritingToStdout { source: IoError },
 }
 
@@ -49,28 +50,26 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
             (api_url, email, token)
         }
     };
-    let auth = format!("Basic {}/token:{}", email.trim(), token.trim());
+    let client = LeavesClient::new(LeavesConfig::new(
+        Some(token.trim().to_owned()),
+        "http://0.0.0.0:10000",
+        Some(email.trim().to_owned()),
+    ))
+    .context(CreatingClient)?;
 
-    let client = Client::new();
-    let res = client
-        .get("http://0.0.0.0:10000/users/@me")
-        .header("Authorization", &auth)
-        .send()
-        .context(SendingRequest)?;
-
-    match res.status() {
-        StatusCode::OK => {
+    match client.me() {
+        Ok(_) => {
             Config::new(api_url, email, token)
                 .save()
                 .context(SavingConfig)?;
 
             writeln!(io::stdout(), "🍂 Signed in").context(WritingToStdout)?;
         }
-        StatusCode::BAD_REQUEST | StatusCode::UNAUTHORIZED => {
+        Err(LeavesClientError::Unauthorized) => {
             writeln!(io::stdout(), "🍂 Login credentials invalid").context(WritingToStdout)?;
         }
-        other => {
-            writeln!(io::stdout(), "🍂 Unknown response: {}", other).context(WritingToStdout)?;
+        Err(other) => {
+            writeln!(io::stdout(), "🍂 Unknown response: {:?}", other).context(WritingToStdout)?;
         }
     }
 

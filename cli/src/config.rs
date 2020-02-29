@@ -35,10 +35,6 @@ impl Config {
         }
     }
 
-    pub fn auth(&self) -> String {
-        format!("Basic {}/token:{}", self.email, self.token)
-    }
-
     pub fn delete() -> Result<(), ConfigError> {
         let path = Dirs::new().context(Directories)?.config();
         fs::remove_file(path).context(DeletingConfig)?;

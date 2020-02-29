@@ -1,14 +1,20 @@
-use models::v1::FileInfo;
+use http_client::prelude::*;
 use pretty_bytes::converter as bytesize;
-use reqwest::{blocking::Client, Error as ReqwestError};
 use snafu::{ResultExt, Snafu};
 use std::io::{self, Error as IoError, Write};
 
 #[derive(Debug, Snafu)]
 pub enum FileError {
-    ParsingResponse { source: ReqwestError },
-    SendingRequest { source: ReqwestError },
-    WritingToStdout { source: IoError },
+    CreatingClient {
+        source: LeavesClientError,
+    },
+    PerformingRequest {
+        id: String,
+        source: LeavesClientError,
+    },
+    WritingToStdout {
+        source: IoError,
+    },
 }
 
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
@@ -25,12 +31,11 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
         }
     };
 
-    let client = Client::new();
-    let res = client
-        .get(&format!("http://0.0.0.0:10000/files/{}", id))
-        .send()
-        .context(SendingRequest)?;
-    let file = res.json::<FileInfo>().context(ParsingResponse)?;
+    let client = LeavesClient::new(LeavesConfig::new(None, "http://0.0.0.0", None))
+        .context(CreatingClient)?;
+    let file = client
+        .file_info(&id)
+        .with_context(|| PerformingRequest { id })?;
 
     let human_bytes = bytesize::convert(file.size as f64);
     writeln!(
