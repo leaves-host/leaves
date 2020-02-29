@@ -29,9 +29,9 @@ impl Config {
         token: impl Into<String>,
     ) -> Self {
         Self {
-            api_url: api_url.into(),
-            email: email.into(),
-            token: token.into(),
+            api_url: api_url.into().trim().to_owned(),
+            email: email.into().trim().to_owned(),
+            token: token.into().trim().to_owned(),
         }
     }
 
