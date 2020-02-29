@@ -1,11 +1,17 @@
-use crate::config::Config;
-use anyhow::Result;
-use std::io::{self, Write};
+use crate::config::{Config, ConfigError};
+use snafu::{ResultExt, Snafu};
+use std::io::{self, Error as IoError, Write};
 
-pub fn run() -> Result<()> {
-    Config::delete()?;
+#[derive(Debug, Snafu)]
+pub enum LogoutError {
+    DeletingConfig { source: ConfigError },
+    WritingMessage { source: IoError },
+}
 
-    writeln!(io::stdout(), "🍂 Logged out")?;
+pub fn run() -> Result<(), LogoutError> {
+    Config::delete().context(DeletingConfig)?;
+
+    writeln!(io::stdout(), "🍂 Logged out").context(WritingMessage)?;
 
     Ok(())
 }

@@ -1,10 +1,19 @@
-use anyhow::Result;
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{self, File},
-    path::PathBuf,
-};
+use serde_json::Error as JsonError;
+use snafu::{OptionExt, ResultExt, Snafu};
+use std::{fs, io::Error as IoError, path::PathBuf};
+
+#[derive(Debug, Snafu)]
+pub enum ConfigError {
+    Deleting { source: IoError },
+    DeletingConfig { source: IoError },
+    DeserializingConfig { source: JsonError },
+    Directories { source: DirectoriesError },
+    ReadingConfig { source: IoError },
+    SerializingConfig { source: JsonError },
+    WritingConfig { source: IoError },
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -30,38 +39,45 @@ impl Config {
         format!("Basic {}/token:{}", self.email, self.token)
     }
 
-    pub fn delete() -> Result<()> {
-        let path = Dirs::new()?.config();
-        fs::remove_file(path)?;
+    pub fn delete() -> Result<(), ConfigError> {
+        let path = Dirs::new().context(Directories)?.config();
+        fs::remove_file(path).context(DeletingConfig)?;
 
         Ok(())
     }
 
-    pub fn load() -> Result<Self> {
-        let auth = Dirs::new()?.config();
-        let config = serde_json::from_reader(File::open(auth)?)?;
+    pub fn load() -> Result<Self, ConfigError> {
+        let auth = Dirs::new().context(Directories)?.config();
+        let contents = fs::read(auth).context(ReadingConfig)?;
+        let config = serde_json::from_slice(&contents).context(DeserializingConfig)?;
 
         Ok(config)
     }
 
-    pub fn save(&self) -> Result<()> {
-        let auth = Dirs::new()?.config();
-        let json = serde_json::to_string_pretty(self)?;
+    pub fn save(&self) -> Result<(), ConfigError> {
+        let auth = Dirs::new().context(Directories)?.config();
+        let json = serde_json::to_string_pretty(self).context(SerializingConfig)?;
 
-        fs::write(auth, json)?;
+        fs::write(auth, json).context(WritingConfig)?;
 
         Ok(())
     }
 }
 
-pub struct Dirs(ProjectDirs);
+#[derive(Debug, Snafu)]
+pub enum DirectoriesError {
+    CreatingDirectory { path: PathBuf, source: IoError },
+    UserHasNoHome,
+}
+
+struct Dirs(ProjectDirs);
 
 impl Dirs {
     /// # Panics
     ///
     /// Panics if the current user has no home.
-    pub fn new() -> Result<Self> {
-        let project = ProjectDirs::from("", "leaves", "leaves-cli").expect("user has no home");
+    pub fn new() -> Result<Self, DirectoriesError> {
+        let project = ProjectDirs::from("", "leaves", "leaves-cli").context(UserHasNoHome)?;
         let dirs = Self(project);
 
         dirs.make_dirs()?;
@@ -76,11 +92,11 @@ impl Dirs {
         path
     }
 
-    pub fn make_dirs(&self) -> Result<()> {
+    pub fn make_dirs(&self) -> Result<(), DirectoriesError> {
         let data = self.0.data_local_dir();
 
         if !data.exists() {
-            fs::create_dir(data)?;
+            fs::create_dir(data).context(CreatingDirectory { path: data })?;
         }
 
         Ok(())

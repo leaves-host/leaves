@@ -1,8 +1,15 @@
-use anyhow::Result;
 use pretty_bytes::converter as bytesize;
-use reqwest::blocking::Client;
+use reqwest::{blocking::Client, Error as ReqwestError};
 use serde::Deserialize;
-use std::io::{self, Write};
+use snafu::{ResultExt, Snafu};
+use std::io::{self, Error as IoError, Write};
+
+#[derive(Debug, Snafu)]
+pub enum FileError {
+    ParsingResponse { source: ReqwestError },
+    SendingRequest { source: ReqwestError },
+    WritingToStdout { source: IoError },
+}
 
 #[derive(Clone, Debug, Deserialize)]
 struct GetFile {
@@ -10,14 +17,15 @@ struct GetFile {
     size: u32,
 }
 
-pub fn run(mut args: impl Iterator<Item = String>) -> Result<()> {
+pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
     let id = match args.next() {
         Some(id) => id,
         None => {
             writeln!(
                 io::stdout(),
                 "🍂 You need to give the ID of the file to get"
-            )?;
+            )
+            .context(WritingToStdout)?;
 
             return Ok(());
         }
@@ -26,8 +34,9 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<()> {
     let client = Client::new();
     let res = client
         .get(&format!("http://0.0.0.0:10000/files/{}", id))
-        .send()?;
-    let file = res.json::<GetFile>()?;
+        .send()
+        .context(SendingRequest)?;
+    let file = res.json::<GetFile>().context(ParsingResponse)?;
 
     let human_bytes = bytesize::convert(file.size as f64);
     writeln!(
@@ -36,7 +45,8 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<()> {
         file.id,
         human_bytes,
         file.size
-    )?;
+    )
+    .context(WritingToStdout)?;
 
     Ok(())
 }

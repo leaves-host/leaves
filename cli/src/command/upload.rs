@@ -1,12 +1,21 @@
 use crate::config::Config;
-use anyhow::Result;
 use copypasta::{ClipboardContext, ClipboardProvider};
-use reqwest::blocking::Client;
+use reqwest::{blocking::Client, Error as ReqwestError};
 use serde::Deserialize;
+use snafu::{ResultExt, Snafu};
 use std::{
     fs,
-    io::{self, Read, Write},
+    io::{self, Error as IoError, Read, Write},
 };
+
+#[derive(Debug, Snafu)]
+pub enum UploadError {
+    ParsingResponse { source: ReqwestError },
+    ReadingFile { source: IoError },
+    ReadingStdin { source: IoError },
+    SendingRequest { source: ReqwestError },
+    WritingToStdout { source: IoError },
+}
 
 #[derive(Clone, Debug, Deserialize)]
 struct Upload {
@@ -15,41 +24,43 @@ struct Upload {
     pub url: String,
 }
 
-pub fn run(mut args: impl Iterator<Item = String>) -> Result<()> {
+pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
     let config = match Config::load() {
         Ok(config) => config,
         Err(_) => {
-            writeln!(io::stdout(), "You need to login first with `leaves login`")?;
+            writeln!(io::stdout(), "You need to login first with `leaves login`")
+                .context(WritingToStdout)?;
 
             return Ok(());
         }
     };
 
     let bytes = if let Some(filepath) = args.next() {
-        writeln!(io::stdout(), "reading")?;
-        let bytes = fs::read(filepath)?;
-        writeln!(io::stdout(), "read")?;
+        writeln!(io::stdout(), "reading").context(WritingToStdout)?;
+        let bytes = fs::read(filepath).context(ReadingFile)?;
+        writeln!(io::stdout(), "read").context(WritingToStdout)?;
 
         bytes
     } else {
         let mut bytes = Vec::new();
-        io::stdin().read_to_end(&mut bytes)?;
+        io::stdin().read_to_end(&mut bytes).context(ReadingStdin)?;
 
         bytes
     };
 
     let client = Client::new();
-    writeln!(io::stdout(), "sending")?;
+    writeln!(io::stdout(), "sending").context(WritingToStdout)?;
     let res = client
         .post("http://0.0.0.0:10000/files")
         .body(bytes)
         .header("Authorization", config.auth())
-        .send()?;
-    writeln!(io::stdout(), "sent")?;
-    let file = res.json::<Upload>()?;
-    writeln!(io::stdout(), "file")?;
+        .send()
+        .context(SendingRequest)?;
+    writeln!(io::stdout(), "sent").context(WritingToStdout)?;
+    let file = res.json::<Upload>().context(ParsingResponse)?;
+    writeln!(io::stdout(), "file").context(WritingToStdout)?;
 
-    writeln!(io::stdout(), "🍂 {}", file.url)?;
+    writeln!(io::stdout(), "🍂 {}", file.url).context(WritingToStdout)?;
 
     let mut clipboard = ClipboardContext::new().unwrap();
     clipboard.set_contents(file.url).unwrap();
