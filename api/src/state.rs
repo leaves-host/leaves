@@ -1,6 +1,6 @@
 use crate::{
     config::Config,
-    error::{Result, R2d2Initialization},
+    error::{R2d2Initialization, Result},
 };
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
@@ -18,7 +18,10 @@ impl State {
         let mut path = PathBuf::from(&config.data_path);
         path.push("db");
         let manager = SqliteConnectionManager::file(path);
-        let db = Pool::builder().max_size(5).build(manager).context(R2d2Initialization)?;
+        let db = Pool::builder()
+            .max_size(5)
+            .build(manager)
+            .context(R2d2Initialization)?;
 
         Ok(Self { config, db })
     }

@@ -69,7 +69,13 @@ impl Client {
         self.send(Method::POST, path, auth, body.into())
     }
 
-    fn send<T: DeserializeOwned>(&self, method: Method, path: &str, auth: bool, body: Body) -> Result<T> {
+    fn send<T: DeserializeOwned>(
+        &self,
+        method: Method,
+        path: &str,
+        auth: bool,
+        body: Body,
+    ) -> Result<T> {
         let mut builder = Request::builder();
         builder.uri(format!("{}/{}", self.config.api_url, path));
         builder.method(method);

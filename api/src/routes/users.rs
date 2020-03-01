@@ -12,7 +12,7 @@ struct PostBody {
 
 pub async fn get(req: Request) -> Response {
     match req.param::<String>("id").as_ref().map(AsRef::as_ref) {
-        Ok("@me") => {},
+        Ok("@me") => {}
         Ok(_) => return Response::new(403),
         Err(_) => return Response::new(400),
     };
@@ -44,30 +44,35 @@ pub async fn get_api_tokens(req: Request) -> Response {
     let user = req.local::<User>().expect("user must be present");
 
     let conn = req.state().db.get().unwrap();
-    let mut statement = match conn.prepare("select id, contents, user_id from api_tokens where user_id = ?1") {
-        Ok(statement) => statement,
-        Err(why) => {
-            warn!("Failed to prepare statement: {:?}", why);
+    let mut statement =
+        match conn.prepare("select id, contents, user_id from api_tokens where user_id = ?1") {
+            Ok(statement) => statement,
+            Err(why) => {
+                warn!("Failed to prepare statement: {:?}", why);
 
-            return utils::response(500, &json!({
-                "message": "Failed to perform database statement",
-            }));
-        },
-    };
+                return utils::response(
+                    500,
+                    &json!({
+                        "message": "Failed to perform database statement",
+                    }),
+                );
+            }
+        };
 
-    let rows = match statement.query_and_then(params![user.id], serde_rusqlite::from_row::<ApiToken>) {
-        Ok(rows) => rows,
-        Err(why) => {
-            warn!("Failed to get API tokens for user {}: {:?}", user.id, why);
+    let rows =
+        match statement.query_and_then(params![user.id], serde_rusqlite::from_row::<ApiToken>) {
+            Ok(rows) => rows,
+            Err(why) => {
+                warn!("Failed to get API tokens for user {}: {:?}", user.id, why);
 
-            return utils::response(
-                500,
-                &json!({
-                    "message": "Error getting API tokens, please try again",
-                }),
-            );
-        },
-    };
+                return utils::response(
+                    500,
+                    &json!({
+                        "message": "Error getting API tokens, please try again",
+                    }),
+                );
+            }
+        };
 
     let tokens = rows.filter_map(|r| r.ok()).collect::<Vec<ApiToken>>();
 

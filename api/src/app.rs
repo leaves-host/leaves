@@ -9,7 +9,9 @@ pub async fn run() -> Result<()> {
     {
         let mut conn = state.db.get().unwrap();
 
-        migrations::runner().run(&mut *conn).expect("failed to run migrations");
+        migrations::runner()
+            .run(&mut *conn)
+            .expect("failed to run migrations");
     }
 
     let port = state.config.port;
