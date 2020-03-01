@@ -28,9 +28,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
     };
 
     let bytes = if let Some(filepath) = args.next() {
-        writeln!(io::stdout(), "reading").context(WritingToStdout)?;
         let bytes = fs::read(filepath).context(ReadingFile)?;
-        writeln!(io::stdout(), "read").context(WritingToStdout)?;
 
         bytes
     } else {
@@ -48,7 +46,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
     .context(CreatingClient)?;
     let file = client.upload(bytes).context(PerformingRequest)?;
 
-    writeln!(io::stdout(), "🍂 {}", file.url).context(WritingToStdout)?;
+    writeln!(io::stdout(), "{}", file.url).context(WritingToStdout)?;
 
     let mut clipboard = ClipboardContext::new().unwrap();
     clipboard.set_contents(file.url).unwrap();
