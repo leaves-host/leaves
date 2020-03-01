@@ -52,7 +52,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
     };
     let client = LeavesClient::new(LeavesConfig::new(
         Some(token.trim().to_owned()),
-        "http://0.0.0.0:10000",
+        &api_url,
         Some(email.trim().to_owned()),
     ))
     .context(CreatingClient)?;

@@ -28,7 +28,7 @@ pub fn run() -> Result<(), SignupError> {
         break email;
     };
 
-    let client = LeavesClient::new(LeavesConfig::new(None, "http://0.0.0.0:10000", None))
+    let client = LeavesClient::new(LeavesConfig::new(None, "https://leaves.hellyer.dev", None))
         .context(CreatingClient)?;
 
     match client.signup(email.trim()) {

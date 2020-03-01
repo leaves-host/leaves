@@ -1,3 +1,4 @@
+use crate::config::Config;
 use http_client::prelude::*;
 use pretty_bytes::converter as bytesize;
 use snafu::{ResultExt, Snafu};
@@ -18,6 +19,16 @@ pub enum FileError {
 }
 
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
+    let config = match Config::load() {
+        Ok(config) => config,
+        Err(_) => {
+            writeln!(io::stdout(), "You need to login first with `leaves login`")
+                .context(WritingToStdout)?;
+
+            return Ok(());
+        }
+    };
+
     let id = match args.next() {
         Some(id) => id,
         None => {
@@ -31,8 +42,8 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
         }
     };
 
-    let client = LeavesClient::new(LeavesConfig::new(None, "http://0.0.0.0", None))
-        .context(CreatingClient)?;
+    let client =
+        LeavesClient::new(LeavesConfig::new(None, config.api_url, None)).context(CreatingClient)?;
     let file = client
         .file_info(&id)
         .with_context(|| PerformingRequest { id })?;
