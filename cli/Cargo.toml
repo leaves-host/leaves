@@ -5,9 +5,9 @@ name = "leaves"
 version = "0.1.0"
 
 [dependencies]
+bytesize = { default-features = false, version = "^1.0.0" }
 directories = { default-features = false, version = "^2.0.2" }
 http-client = { package = "leaves-http-client", path = "../http-client" }
-pretty-bytes = { default-features = false, version = "^0.2.2" }
 serde = { default-features = false, features = ["derive"], version = "^1.0.0" }
 serde_json = { default-features = false, version = "^1.0.0" }
 snafu = { default-features = false, features = ["std"], version = "^0.6.2" }

@@ -1,6 +1,5 @@
 use crate::config::Config;
 use http_client::prelude::*;
-use pretty_bytes::converter as bytesize;
 use snafu::{ResultExt, Snafu};
 use std::io::{self, Error as IoError, Write};
 
@@ -48,7 +47,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
         .file_info(&id)
         .with_context(|| PerformingRequest { id })?;
 
-    let human_bytes = bytesize::convert(file.size as f64);
+    let human_bytes = bytesize::to_string(file.size, true);
     writeln!(
         io::stdout(),
         "🍂 ID: {}\n🍂 Size: {} ({} bytes)",
