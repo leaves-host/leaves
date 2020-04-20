@@ -11,5 +11,5 @@ pub fn prompt(message: &str) -> Result<String, IoError> {
     let mut s = String::new();
     io::stdin().read_line(&mut s)?;
 
-    Ok(s)
+    Ok(s.trim_end().to_owned())
 }
