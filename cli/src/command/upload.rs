@@ -25,9 +25,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
     };
 
     let bytes = if let Some(filepath) = args.next() {
-        let bytes = fs::read(filepath).context(ReadingFile)?;
-
-        bytes
+        fs::read(filepath).context(ReadingFile)?
     } else {
         let mut bytes = Vec::new();
         io::stdin().read_to_end(&mut bytes).context(ReadingStdin)?;
