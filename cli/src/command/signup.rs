@@ -1,4 +1,4 @@
-use crate::config::{Config, ConfigError};
+use crate::{config::{Config, ConfigError}, util};
 use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
 use std::io::Error as IoError;
@@ -13,9 +13,9 @@ pub enum SignupError {
 
 pub fn run() -> Result<(), SignupError> {
     let api_url =
-        essentials::prompt("Where is your leaves 🍂 instance?\n❯ ").context(PromptingUser)?;
+        util::prompt("Where is your leaves 🍂 instance?\n❯ ").context(PromptingUser)?;
     let email = loop {
-        let email = essentials::prompt("What is your email address?\n❯ ").context(PromptingUser)?;
+        let email = util::prompt("What is your email address?\n❯ ").context(PromptingUser)?;
 
         if !email.contains('@') || !email.contains('.') {
             println!("It looks like *{}* is invalid", email);

@@ -3,6 +3,7 @@
 
 mod command;
 mod config;
+mod util;
 
 use std::{env, error::Error};
 
