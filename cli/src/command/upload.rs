@@ -1,5 +1,4 @@
 use crate::config::Config;
-use copypasta::{ClipboardContext, ClipboardProvider};
 use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
 use std::{
@@ -47,9 +46,6 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
     let file = client.upload(bytes).context(PerformingRequest)?;
 
     writeln!(io::stdout(), "{}", file.url).context(WritingToStdout)?;
-
-    let mut clipboard = ClipboardContext::new().unwrap();
-    clipboard.set_contents(file.url).unwrap();
 
     Ok(())
 }
