@@ -77,12 +77,12 @@ impl Client {
         body: Body,
     ) -> Result<T> {
         let mut builder = Request::builder();
-        builder.uri(format!("{}/{}", self.config.api_url, path));
-        builder.method(method);
+        builder = builder.uri(format!("{}/{}", self.config.api_url, path));
+        builder = builder.method(method);
 
         if auth {
             if let Some(auth) = self.config.auth() {
-                builder.header("Authorization", auth);
+                builder = builder.header("Authorization", auth);
             }
         }
 
