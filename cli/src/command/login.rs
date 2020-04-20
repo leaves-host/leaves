@@ -10,19 +10,17 @@ pub enum LoginError {
     PerformingRequest { source: LeavesClientError },
     ReadingStdin { source: IoError },
     SavingConfig { source: ConfigError },
-    WritingToStdout { source: IoError },
 }
 
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
     let (api_url, email, token) = match (args.next(), args.next(), args.next()) {
         (Some(api_url), Some(email), Some(token)) => (api_url, email, token),
         _ => {
-            write!(io::stdout(), "Where is your leaves 🍂 instance?\n❯ ")
-                .context(WritingToStdout)?;
+            println!("Where is your leaves 🍂 instance?\n❯ ");
             io::stdout().flush().context(FlushingStdout)?;
             let mut api_url = String::new();
             io::stdin().read_line(&mut api_url).context(ReadingStdin)?;
-            write!(io::stdout(), "What is your email address?\n❯ ").context(WritingToStdout)?;
+            println!("What is your email address?\n❯ ");
             io::stdout().flush().context(FlushingStdout)?;
 
             let mut email = String::new();
@@ -31,8 +29,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
                 io::stdin().read_line(&mut email).context(ReadingStdin)?;
 
                 if !email.contains('@') || !email.contains('.') {
-                    write!(io::stdout(), "It looks like *{}* is invalid", email)
-                        .context(WritingToStdout)?;
+                    println!("It looks like *{}* is invalid", email);
 
                     email.clear();
 
@@ -42,7 +39,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
                 break;
             }
 
-            write!(io::stdout(), "What is your token?\n❯ ").context(WritingToStdout)?;
+            println!("What is your token?\n❯ ");
             io::stdout().flush().context(FlushingStdout)?;
             let mut token = String::new();
             io::stdin().read_line(&mut token).context(ReadingStdin)?;
@@ -63,13 +60,13 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
                 .save()
                 .context(SavingConfig)?;
 
-            writeln!(io::stdout(), "🍂 Signed in").context(WritingToStdout)?;
+            println!("🍂 Signed in");
         }
         Err(LeavesClientError::Unauthorized) => {
-            writeln!(io::stdout(), "🍂 Login credentials invalid").context(WritingToStdout)?;
+            println!("🍂 Login credentials invalid");
         }
         Err(other) => {
-            writeln!(io::stdout(), "🍂 Unknown response: {:?}", other).context(WritingToStdout)?;
+            println!("🍂 Unknown response: {:?}", other);
         }
     }
 

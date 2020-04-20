@@ -3,7 +3,7 @@ use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
 use std::{
     fs,
-    io::{self, Error as IoError, Read, Write},
+    io::{self, Error as IoError, Read},
 };
 
 #[derive(Debug, Snafu)]
@@ -12,15 +12,13 @@ pub enum UploadError {
     PerformingRequest { source: LeavesClientError },
     ReadingFile { source: IoError },
     ReadingStdin { source: IoError },
-    WritingToStdout { source: IoError },
 }
 
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
     let config = match Config::load() {
         Ok(config) => config,
         Err(_) => {
-            writeln!(io::stdout(), "You need to login first with `leaves login`")
-                .context(WritingToStdout)?;
+            println!("You need to login first with `leaves login`");
 
             return Ok(());
         }
@@ -45,7 +43,7 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), UploadError> {
     .context(CreatingClient)?;
     let file = client.upload(bytes).context(PerformingRequest)?;
 
-    writeln!(io::stdout(), "{}", file.url).context(WritingToStdout)?;
+    println!("{}", file.url);
 
     Ok(())
 }

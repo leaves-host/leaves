@@ -1,7 +1,7 @@
 use crate::config::{Config, ConfigError};
 use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
-use std::io::{self, Error as IoError, Write};
+use std::io::Error as IoError;
 
 #[derive(Debug, Snafu)]
 pub enum SignupError {
@@ -9,7 +9,6 @@ pub enum SignupError {
     PerformingRequest { source: LeavesClientError },
     PromptingUser { source: IoError },
     SavingConfig { source: ConfigError },
-    WritingToStdout { source: IoError },
 }
 
 pub fn run() -> Result<(), SignupError> {
@@ -19,8 +18,7 @@ pub fn run() -> Result<(), SignupError> {
         let email = essentials::prompt("What is your email address?\n❯ ").context(PromptingUser)?;
 
         if !email.contains('@') || !email.contains('.') {
-            writeln!(io::stdout(), "It looks like *{}* is invalid", email)
-                .context(WritingToStdout)?;
+            println!("It looks like *{}* is invalid", email);
 
             continue;
         }
@@ -37,28 +35,17 @@ pub fn run() -> Result<(), SignupError> {
                 .save()
                 .context(SavingConfig)?;
 
-            writeln!(io::stdout(), "🍂 You're logged in and can start uploading")
-                .context(WritingToStdout)?;
+            println!("🍂 You're logged in and can start uploading");
         }
         Err(LeavesClientError::ResourceAlreadyExists) => {
-            writeln!(
-                io::stdout(),
-                "🍂 A user is already registered with that email address"
-            )
-            .context(WritingToStdout)?;
+            println!("🍂 A user is already registered with that email address");
         }
         Err(LeavesClientError::InternalServerError) => {
-            writeln!(
-                io::stdout(),
-                "🍂 The server encountered an error while making your account"
-            )
-            .context(WritingToStdout)?;
-            writeln!(io::stdout(), "Please try again later").context(WritingToStdout)?;
+            println!("🍂 The server encountered an error while making your account");
         }
         Err(other) => {
-            writeln!(io::stdout(), "🍂 An unknown error occurred: {:?}", other)
-                .context(WritingToStdout)?;
-            writeln!(io::stdout(), "Please try again later").context(WritingToStdout)?;
+            println!("🍂 An unknown error occurred: {:?}", other);
+            println!("Please try again later");
         }
     }
 
