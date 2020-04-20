@@ -43,7 +43,10 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
         .with_context(|| PerformingRequest { id })?;
 
     let human_bytes = bytesize::to_string(file.size, true);
-    println!("🍂 ID: {}\n🍂 Size: {} ({} bytes)", file.id, human_bytes, file.size);
+    println!(
+        "🍂 ID: {}\n🍂 Size: {} ({} bytes)",
+        file.id, human_bytes, file.size
+    );
 
     Ok(())
 }

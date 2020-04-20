@@ -1,4 +1,7 @@
-use crate::{config::{Config, ConfigError}, util};
+use crate::{
+    config::{Config, ConfigError},
+    util,
+};
 use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
 use std::io::Error as IoError;
@@ -12,8 +15,7 @@ pub enum SignupError {
 }
 
 pub fn run() -> Result<(), SignupError> {
-    let api_url =
-        util::prompt("Where is your leaves 🍂 instance?\n❯ ").context(PromptingUser)?;
+    let api_url = util::prompt("Where is your leaves 🍂 instance?\n❯ ").context(PromptingUser)?;
     let email = loop {
         let email = util::prompt("What is your email address?\n❯ ").context(PromptingUser)?;
 
@@ -26,8 +28,8 @@ pub fn run() -> Result<(), SignupError> {
         break email;
     };
 
-    let client = LeavesClient::new(LeavesConfig::new(None, &api_url, None))
-        .context(CreatingClient)?;
+    let client =
+        LeavesClient::new(LeavesConfig::new(None, &api_url, None)).context(CreatingClient)?;
 
     match client.signup(email.trim()) {
         Ok(signup) => {
