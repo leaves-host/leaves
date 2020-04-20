@@ -1,14 +1,13 @@
-use crate::config::{Config, ConfigError};
+use crate::{config::{Config, ConfigError}, util};
 use http_client::prelude::*;
 use snafu::{ResultExt, Snafu};
-use std::io::{self, Error as IoError, Write};
+use std::io::Error as IoError;
 
 #[derive(Debug, Snafu)]
 pub enum LoginError {
     CreatingClient { source: LeavesClientError },
-    FlushingStdout { source: IoError },
     PerformingRequest { source: LeavesClientError },
-    ReadingStdin { source: IoError },
+    PromptingUser { source: IoError },
     SavingConfig { source: ConfigError },
 }
 
@@ -16,33 +15,21 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
     let (api_url, email, token) = match (args.next(), args.next(), args.next()) {
         (Some(api_url), Some(email), Some(token)) => (api_url, email, token),
         _ => {
-            println!("Where is your leaves 🍂 instance?\n❯ ");
-            io::stdout().flush().context(FlushingStdout)?;
-            let mut api_url = String::new();
-            io::stdin().read_line(&mut api_url).context(ReadingStdin)?;
-            println!("What is your email address?\n❯ ");
-            io::stdout().flush().context(FlushingStdout)?;
+            let api_url = util::prompt("Where is your leaves 🍂 instance?\n❯ ").context(PromptingUser)?;
 
-            let mut email = String::new();
-
-            loop {
-                io::stdin().read_line(&mut email).context(ReadingStdin)?;
+            let email = loop {
+                let email = util::prompt("What is your email address?\n❯ ").context(PromptingUser)?;
 
                 if !email.contains('@') || !email.contains('.') {
                     println!("It looks like *{}* is invalid", email);
 
-                    email.clear();
-
                     continue;
                 }
 
-                break;
-            }
+                break email;
+            };
 
-            println!("What is your token?\n❯ ");
-            io::stdout().flush().context(FlushingStdout)?;
-            let mut token = String::new();
-            io::stdin().read_line(&mut token).context(ReadingStdin)?;
+            let token = util::prompt("What is your token?\n❯ ").context(PromptingUser)?;
 
             (api_url, email, token)
         }
