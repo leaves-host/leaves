@@ -1,9 +1,8 @@
 use super::super::auth::Auth;
 use crate::prelude::*;
-use futures::future::{BoxFuture, FutureExt};
 use models::v1::User as UserModel;
 use serde_json::json;
-use std::convert::TryFrom;
+use std::{convert::TryFrom, future::Future, pin::Pin};
 use tide::{Middleware, Next};
 
 pub struct TokenValid;
@@ -13,8 +12,8 @@ impl Middleware<State> for TokenValid {
         &'a self,
         mut req: TideRequest<State>,
         next: Next<'a, State>,
-    ) -> BoxFuture<'a, Response> {
-        async move {
+    ) -> Pin<Box<dyn Future<Output = Response> + Send + 'a>> {
+        Box::pin(async move {
             let header = match req.header("authorization") {
                 Some(auth) => auth,
                 None => {
@@ -60,7 +59,6 @@ impl Middleware<State> for TokenValid {
             });
 
             next.run(req).await
-        }
-        .boxed()
+        })
     }
 }
