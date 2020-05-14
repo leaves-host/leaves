@@ -1,12 +1,12 @@
-use super::super::auth::Auth;
-use crate::prelude::*;
+use super::super::auth::{Auth, User};
+use crate::state::State;
 use log::warn;
 use models::v1::User as UserModel;
 use snafu::Snafu;
 use std::{convert::TryFrom, future::Future, pin::Pin, str::FromStr};
 use tide::{
-    http::headers::HeaderName, Error as TideError, Middleware, Next, Result as TideResult,
-    StatusCode,
+    http::headers::HeaderName, Error as TideError, Middleware, Next, Request, Response,
+    Result as TideResult, StatusCode,
 };
 
 #[derive(Debug, Snafu)]
@@ -27,7 +27,7 @@ pub struct TokenValid;
 impl Middleware<State> for TokenValid {
     fn handle<'a>(
         &'a self,
-        mut req: TideRequest<State>,
+        mut req: Request<State>,
         next: Next<'a, State>,
     ) -> Pin<Box<dyn Future<Output = TideResult<Response>> + Send + 'a>> {
         Box::pin(async move {

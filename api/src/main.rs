@@ -6,7 +6,6 @@ mod common;
 mod config;
 mod error;
 mod migrations;
-mod prelude;
 mod routes;
 mod state;
 pub mod utils;

@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{common::auth::User, state::State, utils};
 use async_std::fs;
 use log::warn;
 use rusqlite::params;
@@ -6,11 +6,11 @@ use serde::Deserialize;
 use serde_json::json;
 use snafu::Snafu;
 use std::path::PathBuf;
-use tide::{Error as TideError, Result as TideResult, StatusCode};
+use tide::{Error as TideError, Request, Response, Result as TideResult, StatusCode};
 
 #[derive(Debug, Snafu)]
 enum FileError {
-    #[snafu(display("Request body invalid"))]
+    #[snafu(display("Request<State> body invalid"))]
     BodyInvalid,
     #[snafu(display("Failed to create file, please try again"))]
     CreatingFile,
@@ -28,7 +28,7 @@ struct TrimmedFileInfo {
     pub size: u64,
 }
 
-pub async fn get(req: Request) -> TideResult<Response> {
+pub async fn get(req: Request<State>) -> TideResult<Response> {
     let id = req.param::<String>("id")?;
     let conn = req.state().db.get()?;
 
@@ -46,7 +46,7 @@ pub async fn get(req: Request) -> TideResult<Response> {
     }))?)
 }
 
-pub async fn post(mut req: Request) -> TideResult<Response> {
+pub async fn post(mut req: Request<State>) -> TideResult<Response> {
     let body = req
         .body_bytes()
         .await

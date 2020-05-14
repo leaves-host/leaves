@@ -1,11 +1,11 @@
-use crate::prelude::*;
+use crate::{common::auth::User, state::State, utils};
 use log::warn;
 use models::v1::{ApiToken, Signup, User as UserModel};
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use snafu::Snafu;
-use tide::{Error as TideError, Result as TideResult, StatusCode};
+use tide::{Error as TideError, Request, Response, Result as TideResult, StatusCode};
 
 #[derive(Debug, Snafu)]
 enum UserError {
@@ -22,7 +22,7 @@ struct PostBody {
     email: String,
 }
 
-pub async fn get(req: Request) -> TideResult<Response> {
+pub async fn get(req: Request<State>) -> TideResult<Response> {
     match req.param::<String>("id").as_ref().map(AsRef::as_ref) {
         Ok("@me") => {}
         Ok(_) => return Ok(Response::new(StatusCode::Forbidden)),
@@ -46,7 +46,7 @@ pub async fn get(req: Request) -> TideResult<Response> {
     Ok(Response::new(StatusCode::Ok).body_json(&user)?)
 }
 
-pub async fn get_api_tokens(req: Request) -> TideResult<Response> {
+pub async fn get_api_tokens(req: Request<State>) -> TideResult<Response> {
     let user = req.local::<User>().ok_or(UserError::UserNonexistent)?;
 
     let conn = req.state().db.get()?;
@@ -71,7 +71,7 @@ pub async fn get_api_tokens(req: Request) -> TideResult<Response> {
     Ok(Response::new(StatusCode::Ok).body_json(&tokens)?)
 }
 
-pub async fn post(mut req: Request) -> TideResult<Response> {
+pub async fn post(mut req: Request<State>) -> TideResult<Response> {
     let PostBody { email } = req.body_json().await.map_err(|_| {
         TideError::from_str(
             StatusCode::BadRequest,
