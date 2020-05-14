@@ -1,5 +1,6 @@
 use crate::prelude::*;
+use tide::{Result as TideResult, StatusCode};
 
-pub async fn get(_: Request) -> Response {
-    Response::new(200)
+pub async fn get(_: Request) -> TideResult<Response> {
+    Ok(Response::new(StatusCode::Ok))
 }

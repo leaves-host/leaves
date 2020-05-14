@@ -1,10 +1,27 @@
 use super::super::auth::Auth;
 use crate::prelude::*;
+use log::warn;
 use models::v1::User as UserModel;
-use serde_json::json;
-use std::{convert::TryFrom, future::Future, pin::Pin};
-use tide::{Middleware, Next};
+use snafu::Snafu;
+use std::{convert::TryFrom, future::Future, pin::Pin, str::FromStr};
+use tide::{
+    http::headers::HeaderName, Error as TideError, Middleware, Next, Result as TideResult,
+    StatusCode,
+};
 
+#[derive(Debug, Snafu)]
+enum Error {
+    #[snafu(display("authorization malformed"))]
+    AuthorizationMalformed,
+    #[snafu(display("authorization header missing"))]
+    AuthorizationMissing,
+    #[snafu(display("couldn't retrieve authorization header"))]
+    CreatingAuthorizationHeader,
+    #[snafu(display("the authorization is invalid"))]
+    Unauthorized,
+}
+
+#[derive(Debug)]
 pub struct TokenValid;
 
 impl Middleware<State> for TokenValid {
@@ -12,21 +29,22 @@ impl Middleware<State> for TokenValid {
         &'a self,
         mut req: TideRequest<State>,
         next: Next<'a, State>,
-    ) -> Pin<Box<dyn Future<Output = Response> + Send + 'a>> {
+    ) -> Pin<Box<dyn Future<Output = TideResult<Response>> + Send + 'a>> {
         Box::pin(async move {
-            let header = match req.header("authorization") {
-                Some(auth) => auth,
-                None => {
-                    return Response::new(401).body_string("Authorization missing.".to_owned());
-                }
-            };
+            let header_name = HeaderName::from_str("authorization")
+                .map_err(|_| Error::CreatingAuthorizationHeader)?;
 
-            let auth = match Auth::try_from(header) {
-                Ok(auth) => auth,
-                Err(_) => {
-                    return Response::new(401).body_string("Authorization malformed.".to_owned());
-                }
-            };
+            let header_values = req.header(&header_name).ok_or_else(|| {
+                TideError::new(StatusCode::Unauthorized, Error::AuthorizationMissing)
+            })?;
+
+            let header_value = header_values
+                .first()
+                .ok_or_else(|| TideError::new(StatusCode::Unauthorized, Error::Unauthorized))?;
+
+            let auth = Auth::try_from(header_value.as_str()).map_err(|_| {
+                TideError::new(StatusCode::Unauthorized, Error::AuthorizationMalformed)
+            })?;
 
             let conn = req.state().db.get().unwrap();
             let query = conn.query_row_and_then(
@@ -36,19 +54,11 @@ impl Middleware<State> for TokenValid {
                 &[auth.email, auth.api_token],
                 serde_rusqlite::from_row::<UserModel>,
             );
-            let user_row = match query {
-                Ok(user) => user,
-                Err(why) => {
-                    log::warn!("Error: {:?}", why);
+            let user_row = query.map_err(|why| {
+                warn!("Error: {:?}", why);
 
-                    return utils::response(
-                        401,
-                        &json!({
-                            "message": "Credentials invalid.",
-                        }),
-                    );
-                }
-            };
+                TideError::new(StatusCode::Unauthorized, Error::Unauthorized)
+            })?;
 
             let api_token = auth.api_token.to_owned();
 

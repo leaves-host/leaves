@@ -3,7 +3,7 @@ use r2d2::Error as R2d2Error;
 use snafu::Snafu;
 use std::{io::Error as IoError, result::Result as StdResult};
 
-pub type Result<T> = StdResult<T, Error>;
+pub type Result<T, E = Error> = StdResult<T, E>;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub(crate)))]

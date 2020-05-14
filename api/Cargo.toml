@@ -25,6 +25,4 @@ serde = { default-features = false, features = ["derive"], version = "^1.0.0" }
 serde_json = { default-features = false, version = "^1.0.0" }
 serde_rusqlite = { default-features = false, version = "^0.23.0" }
 snafu = { default-features = false, features = ["std"], version = "^0.6.0" }
-# This commit adds per-route middleware, which just makes everything so much
-# easier.
-tide = { default-features = false, features = ["hyper-server"], git = "https://github.com/http-rs/tide", rev = "589abaf" }
+tide = { default-features = false, features = ["h1-server"], version = "^0.8.0" }
