@@ -1,4 +1,4 @@
-use directories::ProjectDirs;
+use directories_next::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use serde_json::Error as JsonError;
 use snafu::{OptionExt, ResultExt, Snafu};

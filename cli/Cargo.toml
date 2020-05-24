@@ -6,7 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 bytesize = { default-features = false, version = "^1.0.0" }
-directories = { default-features = false, version = "^2.0.2" }
+directories-next = { default-features = false, version = "^1.0.1" }
 http-client = { package = "leaves-http-client", path = "../http-client" }
 serde = { default-features = false, features = ["derive"], version = "^1.0.0" }
 serde_json = { default-features = false, version = "^1.0.0" }
