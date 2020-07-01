@@ -6,7 +6,7 @@ use serde::Deserialize;
 use serde_json::json;
 use snafu::Snafu;
 use std::path::PathBuf;
-use tide::{Error as TideError, Request, Response, Result as TideResult, StatusCode};
+use tide::{Body, Error as TideError, Request, Response, Result as TideResult, StatusCode};
 
 #[derive(Debug, Snafu)]
 enum FileError {
@@ -40,10 +40,13 @@ pub async fn get(req: Request<State>) -> TideResult<Response> {
         )
         .map_err(|_| TideError::new(StatusCode::NotFound, FileError::FileNonexistent))?;
 
-    Ok(Response::new(StatusCode::Ok).body_json(&json!({
+    let mut res = Response::new(StatusCode::Ok);
+    res.set_body(Body::from_json(&json!({
         "id": file.id,
         "size": file.size,
-    }))?)
+    }))?);
+
+    Ok(res)
 }
 
 pub async fn post(mut req: Request<State>) -> TideResult<Response> {
@@ -52,7 +55,7 @@ pub async fn post(mut req: Request<State>) -> TideResult<Response> {
         .await
         .map_err(|_| TideError::from_str(StatusCode::BadRequest, FileError::BodyInvalid))?;
 
-    let user = req.local::<User>().ok_or(FileError::UserNonexistent)?;
+    let user = req.ext::<User>().ok_or(FileError::UserNonexistent)?;
 
     let id = utils::random_string(6);
     let body_size = body.len() as i64;
@@ -80,9 +83,12 @@ pub async fn post(mut req: Request<State>) -> TideResult<Response> {
 
     let url = format!("{}/{}", req.state().config.public_url, id);
 
-    Ok(Response::new(StatusCode::Created).body_json(&json!({
+    let mut res = Response::new(StatusCode::Created);
+    res.set_body(Body::from_json(&json!({
         "id": id,
         "size": body_size,
         "url": url,
-    }))?)
+    }))?);
+
+    Ok(res)
 }

@@ -15,7 +15,7 @@ use log::LevelFilter;
 use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    femme::pretty::Logger::new().start(LevelFilter::Info)?;
+    femme::with_level(LevelFilter::Info);
 
     task::block_on(app::run())?;
 

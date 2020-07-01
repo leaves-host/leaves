@@ -38,9 +38,7 @@ impl Middleware<State> for TokenValid {
                 TideError::new(StatusCode::Unauthorized, Error::AuthorizationMissing)
             })?;
 
-            let header_value = header_values
-                .first()
-                .ok_or_else(|| TideError::new(StatusCode::Unauthorized, Error::Unauthorized))?;
+            let header_value = header_values.last();
 
             let auth = Auth::try_from(header_value.as_str()).map_err(|_| {
                 TideError::new(StatusCode::Unauthorized, Error::AuthorizationMalformed)
@@ -62,7 +60,7 @@ impl Middleware<State> for TokenValid {
 
             let api_token = auth.api_token.to_owned();
 
-            req = req.set_local(User {
+            req.set_ext(User {
                 api_token,
                 email: user_row.email,
                 id: user_row.id,

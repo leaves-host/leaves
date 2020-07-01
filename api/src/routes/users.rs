@@ -5,7 +5,7 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use snafu::Snafu;
-use tide::{Error as TideError, Request, Response, Result as TideResult, StatusCode};
+use tide::{Body, Error as TideError, Request, Response, Result as TideResult, StatusCode};
 
 #[derive(Debug, Snafu)]
 enum UserError {
@@ -28,7 +28,7 @@ pub async fn get(req: Request<State>) -> TideResult<Response> {
         Ok(_) => return Ok(Response::new(StatusCode::Forbidden)),
         Err(_) => return Ok(Response::new(StatusCode::BadRequest)),
     };
-    let user = req.local::<User>().ok_or(UserError::UserNonexistent)?;
+    let user = req.ext::<User>().ok_or(UserError::UserNonexistent)?;
 
     let conn = req.state().db.get().expect("couldn't get connection");
     let user = conn
@@ -43,11 +43,14 @@ pub async fn get(req: Request<State>) -> TideResult<Response> {
             UserError::QueryExecution
         })?;
 
-    Ok(Response::new(StatusCode::Ok).body_json(&user)?)
+    let mut res = Response::new(StatusCode::Ok);
+    res.set_body(Body::from_json(&user)?);
+
+    Ok(res)
 }
 
 pub async fn get_api_tokens(req: Request<State>) -> TideResult<Response> {
-    let user = req.local::<User>().ok_or(UserError::UserNonexistent)?;
+    let user = req.ext::<User>().ok_or(UserError::UserNonexistent)?;
 
     let conn = req.state().db.get()?;
     let mut statement = conn
@@ -68,7 +71,10 @@ pub async fn get_api_tokens(req: Request<State>) -> TideResult<Response> {
 
     let tokens = rows.filter_map(|r| r.ok()).collect::<Vec<ApiToken>>();
 
-    Ok(Response::new(StatusCode::Ok).body_json(&tokens)?)
+    let mut res = Response::new(StatusCode::Ok);
+    res.set_body(Body::from_json(&tokens)?);
+
+    Ok(res)
 }
 
 pub async fn post(mut req: Request<State>) -> TideResult<Response> {
@@ -103,9 +109,12 @@ pub async fn post(mut req: Request<State>) -> TideResult<Response> {
         UserError::QueryExecution
     })?;
 
-    Ok(Response::new(StatusCode::Created).body_json(&Signup {
+    let mut res = Response::new(StatusCode::Created);
+    res.set_body(Body::from_json(&Signup {
         email: email.to_owned(),
         id: id as u64,
         token: token_content,
-    })?)
+    })?);
+
+    Ok(res)
 }
