@@ -6,7 +6,7 @@ use std::{io::Error as IoError, result::Result as StdResult};
 pub type Result<T, E = Error> = StdResult<T, E>;
 
 #[derive(Debug, Snafu)]
-#[snafu(visibility(pub(crate)))]
+#[snafu(visibility(pub))]
 pub enum Error {
     #[snafu(display("environment variables invalid"))]
     Envy { source: EnvyError },
