@@ -1,4 +1,4 @@
-FROM rust:1.41 as build
+FROM rust:1.48 as build
 
 WORKDIR /leaves/api
 
@@ -16,7 +16,7 @@ COPY ./api/src ./src
 
 RUN cargo build --release
 
-FROM rust:1.41
+FROM rust:1.48
 
 WORKDIR /app
 

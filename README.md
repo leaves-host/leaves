@@ -70,7 +70,7 @@ $ docker run -itd --env-file leaves.env -v leaves_data:/data -p 10000:80 viviani
 
 [license badge]: https://img.shields.io/github/license/leaves-host/leaves?style=for-the-badge
 [license link]: https://opensource.org/licenses/ISC
-[rust badge]: https://img.shields.io/badge/Rust-1.41-93450a?style=for-the-badge
-[rust link]: https://blog.rust-lang.org/2020/01/30/Rust-1.41.0.html
+[rust badge]: https://img.shields.io/badge/Rust-1.48+-93450a?style=for-the-badge
+[rust link]: https://blog.rust-lang.org/2020/11/19/Rust-1.48.html
 [test badge]: https://img.shields.io/github/workflow/status/leaves-host/leaves/Tests/master?style=for-the-badge
 [test link]: https://github.com/leaves-host/leaves/actions
