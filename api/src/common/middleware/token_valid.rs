@@ -1,6 +1,6 @@
 use super::super::auth::{Auth, User};
-use async_trait::async_trait;
 use crate::state::State;
+use async_trait::async_trait;
 use log::warn;
 use models::v1::User as UserModel;
 use snafu::Snafu;
@@ -27,23 +27,18 @@ pub struct TokenValid;
 
 #[async_trait]
 impl Middleware<State> for TokenValid {
-    async fn handle(
-        &self,
-        mut req: Request<State>,
-        next: Next<'_, State>,
-    ) -> TideResult<Response> {
+    async fn handle(&self, mut req: Request<State>, next: Next<'_, State>) -> TideResult<Response> {
         let header_name = HeaderName::from_str("authorization")
             .map_err(|_| Error::CreatingAuthorizationHeader)?;
 
-        let header_values = req.header(&header_name).ok_or_else(|| {
-            TideError::new(StatusCode::Unauthorized, Error::AuthorizationMissing)
-        })?;
+        let header_values = req
+            .header(&header_name)
+            .ok_or_else(|| TideError::new(StatusCode::Unauthorized, Error::AuthorizationMissing))?;
 
         let header_value = header_values.last();
 
-        let auth = Auth::try_from(header_value.as_str()).map_err(|_| {
-            TideError::new(StatusCode::Unauthorized, Error::AuthorizationMalformed)
-        })?;
+        let auth = Auth::try_from(header_value.as_str())
+            .map_err(|_| TideError::new(StatusCode::Unauthorized, Error::AuthorizationMalformed))?;
 
         let conn = req.state().db.get().unwrap();
         let query = conn.query_row_and_then(

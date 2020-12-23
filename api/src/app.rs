@@ -5,7 +5,7 @@ use crate::{
     state::State,
 };
 use snafu::ResultExt;
-use std::net::{Ipv4Addr, SocketAddrV4, SocketAddr};
+use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use tide::log::LogMiddleware;
 
 pub async fn run() -> Result<()> {
@@ -24,9 +24,7 @@ pub async fn run() -> Result<()> {
     let mut app = tide::with_state(state);
     app.with(LogMiddleware::new());
     app.at("/").get(routes::index::get);
-    app.at("/files")
-        .with(TokenValid)
-        .post(routes::files::post);
+    app.at("/files").with(TokenValid).post(routes::files::post);
     app.at("/files/:id").get(routes::files::get);
     app.at("/users").post(routes::users::post);
     app.at("/users/:id")
