@@ -23,7 +23,7 @@ struct PostBody {
 }
 
 pub async fn get(req: Request<State>) -> TideResult<Response> {
-    match req.param::<String>("id").as_ref().map(AsRef::as_ref) {
+    match req.param("id").as_ref().map(AsRef::as_ref) {
         Ok("@me") => {}
         Ok(_) => return Ok(Response::new(StatusCode::Forbidden)),
         Err(_) => return Ok(Response::new(StatusCode::BadRequest)),

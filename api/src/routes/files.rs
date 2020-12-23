@@ -29,7 +29,7 @@ struct TrimmedFileInfo {
 }
 
 pub async fn get(req: Request<State>) -> TideResult<Response> {
-    let id = req.param::<String>("id")?;
+    let id = req.param("id")?;
     let conn = req.state().db.get()?;
 
     let file = conn

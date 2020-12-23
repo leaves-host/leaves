@@ -5,16 +5,17 @@ use crate::{
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use snafu::ResultExt;
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::Arc};
 
+#[derive(Clone, Debug)]
 pub struct State {
-    pub config: Config,
+    pub config: Arc<Config>,
     pub db: Pool<SqliteConnectionManager>,
 }
 
 impl State {
     pub async fn new() -> Result<Self> {
-        let config = Config::new()?;
+        let config = Arc::new(Config::new()?);
         let mut path = PathBuf::from(&config.data_path);
         path.push("db");
         let manager = SqliteConnectionManager::file(path);

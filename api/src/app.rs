@@ -5,7 +5,7 @@ use crate::{
     state::State,
 };
 use snafu::ResultExt;
-use std::net::{Ipv4Addr, SocketAddrV4};
+use std::net::{Ipv4Addr, SocketAddrV4, SocketAddr};
 use tide::log::LogMiddleware;
 
 pub async fn run() -> Result<()> {
@@ -22,21 +22,21 @@ pub async fn run() -> Result<()> {
     let port = state.config.port;
 
     let mut app = tide::with_state(state);
-    app.middleware(LogMiddleware::new());
+    app.with(LogMiddleware::new());
     app.at("/").get(routes::index::get);
     app.at("/files")
-        .middleware(TokenValid)
+        .with(TokenValid)
         .post(routes::files::post);
     app.at("/files/:id").get(routes::files::get);
     app.at("/users").post(routes::users::post);
     app.at("/users/:id")
-        .middleware(TokenValid)
+        .with(TokenValid)
         .get(routes::users::get);
     app.at("/users/:id/api-tokens")
-        .middleware(TokenValid)
+        .with(TokenValid)
         .get(routes::users::get_api_tokens);
 
-    let addr = SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), port);
+    let addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), port));
     app.listen(addr)
         .await
         .with_context(|| ServerInitialization { port })?;

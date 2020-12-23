@@ -5,7 +5,7 @@ pub fn random_string(n: usize) -> String {
     let mut rng = rand::thread_rng();
 
     iter::repeat(())
-        .map(|()| rng.sample(Alphanumeric))
+        .map(|()| rng.sample(Alphanumeric) as char)
         .take(n)
         .collect()
 }
