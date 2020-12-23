@@ -11,7 +11,6 @@ use std::{
 
 #[derive(Debug)]
 pub enum ConfigError {
-    Deleting { source: IoError },
     DeletingConfig { source: IoError },
     DeserializingConfig { source: JsonError },
     Directories { source: DirectoriesError },
@@ -29,7 +28,6 @@ impl Display for ConfigError {
 impl Error for ConfigError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::Deleting { source } => Some(source),
             Self::DeletingConfig { source } => Some(source),
             Self::DeserializingConfig { source } => Some(source),
             Self::Directories { .. } => None,

@@ -12,7 +12,6 @@ use std::{
 #[derive(Debug)]
 pub enum SignupError {
     CreatingClient { source: LeavesClientError },
-    PerformingRequest { source: LeavesClientError },
     PromptingUser { source: IoError },
     SavingConfig { source: ConfigError },
 }
@@ -27,7 +26,6 @@ impl Error for SignupError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::CreatingClient { source } => Some(source),
-            Self::PerformingRequest { source } => Some(source),
             Self::PromptingUser { source } => Some(source),
             Self::SavingConfig { source } => Some(source),
         }

@@ -3,7 +3,6 @@ use http_client::prelude::*;
 use std::{
     error::Error,
     fmt::{Display, Formatter, Result as FmtResult},
-    io::Error as IoError,
 };
 
 #[derive(Debug)]
@@ -14,9 +13,6 @@ pub enum FileError {
     PerformingRequest {
         id: String,
         source: LeavesClientError,
-    },
-    WritingToStdout {
-        source: IoError,
     },
 }
 
@@ -31,7 +27,6 @@ impl Error for FileError {
         match self {
             Self::CreatingClient { source } => Some(source),
             Self::PerformingRequest { source, .. } => Some(source),
-            Self::WritingToStdout { source } => Some(source),
         }
     }
 }
