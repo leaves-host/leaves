@@ -4,23 +4,35 @@ use log::warn;
 use rusqlite::params;
 use serde::Deserialize;
 use serde_json::json;
-use snafu::Snafu;
-use std::path::PathBuf;
+use std::{
+    error::Error,
+    fmt::{Display, Formatter, Result as FmtResult},
+    path::PathBuf,
+};
 use tide::{Body, Error as TideError, Request, Response, Result as TideResult, StatusCode};
 
-#[derive(Debug, Snafu)]
+#[derive(Debug)]
 enum FileError {
-    #[snafu(display("Request<State> body invalid"))]
     BodyInvalid,
-    #[snafu(display("Failed to create file, please try again"))]
     CreatingFile,
-    #[snafu(display("File doesn't exist"))]
     FileNonexistent,
-    #[snafu(display("Failed to save file"))]
     SavingFile,
-    #[snafu(display("user is not ready"))]
     UserNonexistent,
 }
+
+impl Display for FileError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::BodyInvalid => f.write_str("Request<State> body invalid"),
+            Self::CreatingFile => f.write_str("Failed to create file, please try again"),
+            Self::FileNonexistent => f.write_str("File doesn't exist"),
+            Self::SavingFile => f.write_str("Failed to save file"),
+            Self::UserNonexistent => f.write_str("user is not ready"),
+        }
+    }
+}
+
+impl Error for FileError {}
 
 #[derive(Deserialize)]
 struct TrimmedFileInfo {

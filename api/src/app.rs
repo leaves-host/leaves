@@ -1,10 +1,9 @@
 use crate::{
     common::middleware::TokenValid,
-    error::{Result, ServerInitialization},
+    error::{Error, Result},
     migrations, routes,
     state::State,
 };
-use snafu::ResultExt;
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use tide::log::LogMiddleware;
 
@@ -37,7 +36,7 @@ pub async fn run() -> Result<()> {
     let addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), port));
     app.listen(addr)
         .await
-        .with_context(|| ServerInitialization { port })?;
+        .map_err(|source| Error::ServerInitialization { port, source })?;
 
     Ok(())
 }

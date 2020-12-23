@@ -3,10 +3,13 @@ use crate::{
     util,
 };
 use http_client::prelude::*;
-use snafu::{ResultExt, Snafu};
-use std::io::Error as IoError;
+use std::{
+    error::Error,
+    fmt::{Display, Formatter, Result as FmtResult},
+    io::Error as IoError,
+};
 
-#[derive(Debug, Snafu)]
+#[derive(Debug)]
 pub enum LoginError {
     CreatingClient { source: LeavesClientError },
     PerformingRequest { source: LeavesClientError },
@@ -14,16 +17,33 @@ pub enum LoginError {
     SavingConfig { source: ConfigError },
 }
 
+impl Display for LoginError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.write_str("logging in failed")
+    }
+}
+
+impl Error for LoginError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::CreatingClient { source } => Some(source),
+            Self::PerformingRequest { source } => Some(source),
+            Self::PromptingUser { source } => Some(source),
+            Self::SavingConfig { source } => Some(source),
+        }
+    }
+}
+
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
     let (api_url, email, token) = match (args.next(), args.next(), args.next()) {
         (Some(api_url), Some(email), Some(token)) => (api_url, email, token),
         _ => {
-            let api_url =
-                util::prompt("Where is your leaves 🍂 instance?\n❯ ").context(PromptingUser)?;
+            let api_url = util::prompt("Where is your leaves 🍂 instance?\n❯ ")
+                .map_err(|source| LoginError::PromptingUser { source })?;
 
             let email = loop {
-                let email =
-                    util::prompt("What is your email address?\n❯ ").context(PromptingUser)?;
+                let email = util::prompt("What is your email address?\n❯ ")
+                    .map_err(|source| LoginError::PromptingUser { source })?;
 
                 if !email.contains('@') || !email.contains('.') {
                     println!("It looks like *{}* is invalid", email);
@@ -34,7 +54,8 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
                 break email;
             };
 
-            let token = util::prompt("What is your token?\n❯ ").context(PromptingUser)?;
+            let token = util::prompt("What is your token?\n❯ ")
+                .map_err(|source| LoginError::PromptingUser { source })?;
 
             (api_url, email, token)
         }
@@ -44,13 +65,13 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), LoginError> {
         &api_url,
         Some(email.trim().to_owned()),
     ))
-    .context(CreatingClient)?;
+    .map_err(|source| LoginError::CreatingClient { source })?;
 
     match client.me() {
         Ok(_) => {
             Config::new(api_url, email, token)
                 .save()
-                .context(SavingConfig)?;
+                .map_err(|source| LoginError::SavingConfig { source })?;
 
             println!("🍂 Signed in");
         }

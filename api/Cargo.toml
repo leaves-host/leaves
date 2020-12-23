@@ -25,5 +25,4 @@ rusqlite = { default-features = false, version = "^0.24.2" }
 serde = { default-features = false, features = ["derive"], version = "^1.0.0" }
 serde_json = { default-features = false, version = "^1.0.0" }
 serde_rusqlite = { default-features = false, version = "^0.26.0" }
-snafu = { default-features = false, features = ["std"], version = "^0.6.0" }
 tide = { default-features = true, features = ["h1-server"], version = "^0.15.0" }

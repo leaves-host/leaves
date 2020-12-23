@@ -1,10 +1,9 @@
 use crate::{
     config::Config,
-    error::{R2d2Initialization, Result},
+    error::{Error, Result},
 };
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
-use snafu::ResultExt;
 use std::{path::PathBuf, sync::Arc};
 
 #[derive(Clone, Debug)]
@@ -22,7 +21,7 @@ impl State {
         let db = Pool::builder()
             .max_size(5)
             .build(manager)
-            .context(R2d2Initialization)?;
+            .map_err(|source| Error::R2d2Initialization { source })?;
 
         Ok(Self { config, db })
     }

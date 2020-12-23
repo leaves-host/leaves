@@ -1,5 +1,8 @@
-use snafu::Snafu;
-use std::convert::TryFrom;
+use std::{
+    convert::TryFrom,
+    error::Error as StdError,
+    fmt::{Display, Formatter, Result as FmtResult},
+};
 
 pub struct User {
     pub api_token: String,
@@ -7,7 +10,7 @@ pub struct User {
     pub id: i64,
 }
 
-#[derive(Debug, Eq, PartialEq, Snafu)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum AuthParseError {
     ApiTokenInvalid,
     EmailMissing,
@@ -15,6 +18,14 @@ pub enum AuthParseError {
     ValueInvalid,
     ValueMissing,
 }
+
+impl Display for AuthParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.write_str("authentication failed.")
+    }
+}
+
+impl StdError for AuthParseError {}
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Auth<'a> {

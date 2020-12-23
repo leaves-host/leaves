@@ -1,9 +1,12 @@
 use crate::config::Config;
 use http_client::prelude::*;
-use snafu::{ResultExt, Snafu};
-use std::io::Error as IoError;
+use std::{
+    error::Error,
+    fmt::{Display, Formatter, Result as FmtResult},
+    io::Error as IoError,
+};
 
-#[derive(Debug, Snafu)]
+#[derive(Debug)]
 pub enum FileError {
     CreatingClient {
         source: LeavesClientError,
@@ -15,6 +18,22 @@ pub enum FileError {
     WritingToStdout {
         source: IoError,
     },
+}
+
+impl Display for FileError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.write_str("working with the file failed")
+    }
+}
+
+impl Error for FileError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::CreatingClient { source } => Some(source),
+            Self::PerformingRequest { source, .. } => Some(source),
+            Self::WritingToStdout { source } => Some(source),
+        }
+    }
 }
 
 pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
@@ -36,11 +55,11 @@ pub fn run(mut args: impl Iterator<Item = String>) -> Result<(), FileError> {
         }
     };
 
-    let client =
-        LeavesClient::new(LeavesConfig::new(None, config.api_url, None)).context(CreatingClient)?;
+    let client = LeavesClient::new(LeavesConfig::new(None, config.api_url, None))
+        .map_err(|source| FileError::CreatingClient { source })?;
     let file = client
         .file_info(&id)
-        .with_context(|| PerformingRequest { id })?;
+        .map_err(|source| FileError::PerformingRequest { id, source })?;
 
     let human_bytes = bytesize::to_string(file.size, true);
     println!(

@@ -3,24 +3,39 @@ use crate::state::State;
 use async_trait::async_trait;
 use log::warn;
 use models::v1::User as UserModel;
-use snafu::Snafu;
-use std::{convert::TryFrom, str::FromStr};
+use std::{
+    convert::TryFrom,
+    error::Error as StdError,
+    fmt::{Display, Formatter, Result as FmtResult},
+    str::FromStr,
+};
 use tide::{
     http::headers::HeaderName, Error as TideError, Middleware, Next, Request, Response,
     Result as TideResult, StatusCode,
 };
 
-#[derive(Debug, Snafu)]
+#[derive(Debug)]
 enum Error {
-    #[snafu(display("authorization malformed"))]
     AuthorizationMalformed,
-    #[snafu(display("authorization header missing"))]
     AuthorizationMissing,
-    #[snafu(display("couldn't retrieve authorization header"))]
     CreatingAuthorizationHeader,
-    #[snafu(display("the authorization is invalid"))]
     Unauthorized,
 }
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::AuthorizationMalformed => f.write_str("authorization malformed"),
+            Self::AuthorizationMissing => f.write_str("authorization header missing"),
+            Self::CreatingAuthorizationHeader => {
+                f.write_str("couldn't retrieve authorization header")
+            }
+            Self::Unauthorized => f.write_str("the authorization is invalid"),
+        }
+    }
+}
+
+impl StdError for Error {}
 
 #[derive(Debug)]
 pub struct TokenValid;

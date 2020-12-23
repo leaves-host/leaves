@@ -4,18 +4,30 @@ use models::v1::{ApiToken, Signup, User as UserModel};
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use snafu::Snafu;
+use std::{
+    error::Error,
+    fmt::{Display, Formatter, Result as FmtResult},
+};
 use tide::{Body, Error as TideError, Request, Response, Result as TideResult, StatusCode};
 
-#[derive(Debug, Snafu)]
+#[derive(Debug)]
 enum UserError {
-    #[snafu(display("A user with that email address already exists"))]
     EmailTaken,
-    #[snafu(display("Failed to execute database query"))]
     QueryExecution,
-    #[snafu(display("user is not ready"))]
     UserNonexistent,
 }
+
+impl Display for UserError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            Self::EmailTaken => f.write_str("a user with that email address already exists"),
+            Self::QueryExecution => f.write_str("failed to execute database query"),
+            Self::UserNonexistent => f.write_str("user is not ready"),
+        }
+    }
+}
+
+impl Error for UserError {}
 
 #[derive(Deserialize, Serialize)]
 struct PostBody {

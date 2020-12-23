@@ -1,6 +1,5 @@
-use crate::error::{Envy, Result};
+use crate::error::{Error, Result};
 use serde::Deserialize;
-use snafu::ResultExt;
 use std::{fs, path::PathBuf};
 
 mod defaults {
@@ -30,7 +29,7 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Result<Self> {
-        let this = envy::from_env::<Self>().context(Envy)?;
+        let this = envy::from_env::<Self>().map_err(|source| Error::Envy { source })?;
 
         let mut files = PathBuf::from(&this.data_path);
         files.push("files");
